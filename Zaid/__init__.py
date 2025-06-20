@@ -1,33 +1,60 @@
-import asyncio
-from aiohttp import ClientSession
-from Zaid import app, clients  # adjust import if needed
+from pyrogram import Client
+from config import (
+    API_ID, API_HASH, SUDO_USERS, OWNER_ID, BOT_TOKEN,
+    STRING_SESSION1, STRING_SESSION2, STRING_SESSION3, STRING_SESSION4,
+    STRING_SESSION5, STRING_SESSION6, STRING_SESSION7, STRING_SESSION8,
+    STRING_SESSION9, STRING_SESSION10
+)
+from datetime import datetime
+import time
 
-aiosession = None
+StartTime = time.time()
+START_TIME = datetime.now()
+CMD_HELP = {}
+clients = []
+ids = []
+aiosession = None  # Will be set inside main.py
 
-async def start_all():
-    global aiosession
-    aiosession = ClientSession()
+# Ensure OWNER_ID is in sudo list
+if OWNER_ID not in SUDO_USERS:
+    SUDO_USERS.append(OWNER_ID)
 
-    # Start the bot
-    await app.start()
-    print("Bot Started ✅")
+# Use default fallback if missing
+if not API_ID:
+    print("WARNING: API ID not found, using fallback.")
+    API_ID = 6435225
 
-    # Start all string session clients
-    for client in clients:
-        await client.start()
-        print(f"{client.name} Started ✅")
+if not API_HASH:
+    print("WARNING: API HASH not found, using fallback.")
+    API_HASH = "4e984ea35f854762dcde906dce426c2d"
 
-    print("All Clients and Bot are up and running!")
+if not BOT_TOKEN:
+    print("ERROR: BOT TOKEN not found. Add it in config.py!")
 
-    await idle()  # Keep the program running
+# Main bot (with plugin root for commands)
+app = Client(
+    name="bot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    bot_token=BOT_TOKEN,
+    plugins=dict(root="Zaid/modules/bot"),
+    in_memory=True,
+)
 
-    # Cleanup on shutdown
-    await app.stop()
-    for client in clients:
-        await client.stop()
-    await aiosession.close()
-    print("All stopped gracefully!")
+# User clients (STRING_SESSION-based)
+session_strings = [
+    STRING_SESSION1, STRING_SESSION2, STRING_SESSION3, STRING_SESSION4,
+    STRING_SESSION5, STRING_SESSION6, STRING_SESSION7, STRING_SESSION8,
+    STRING_SESSION9, STRING_SESSION10
+]
 
-if __name__ == "__main__":
-    from pyrogram import idle
-    asyncio.run(start_all())
+for i, session in enumerate(session_strings, start=1):
+    if session:
+        print(f"Client{i}: Found. Starting 📳")
+        clients.append(Client(
+            name=f"cli{i}",
+            api_id=API_ID,
+            api_hash=API_HASH,
+            session_string=session,
+            plugins=dict(root="Zaid/modules")
+        ))
