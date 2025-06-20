@@ -1,26 +1,40 @@
 import asyncio
 import importlib
+from aiohttp import ClientSession
 from pyrogram import Client, idle
+from Zaid import app, clients, ids, aiosession
 from Zaid.helper import join
 from Zaid.modules import ALL_MODULES
-from Zaid import clients, app, ids
 
 async def start_bot():
+    global aiosession
+    aiosession = ClientSession()
+
     await app.start()
-    print("LOG: Founded Bot token Booting..")
-    for all_module in ALL_MODULES:
-        importlib.import_module("Zaid.modules" + all_module)
-        print(f"Successfully Imported {all_module} 💥")
+    print("LOG: Bot token found. Booting...")
+
+    for module in ALL_MODULES:
+        importlib.import_module("Zaid.modules." + module)
+        print(f"Successfully imported: {module} 💥")
+
     for cli in clients:
         try:
             await cli.start()
-            ex = await cli.get_me()
+            me = await cli.get_me()
             await join(cli)
-            print(f"Started {ex.first_name} 🔥")
-            ids.append(ex.id)
+            print(f"Started client: {me.first_name} 🔥")
+            ids.append(me.id)
         except Exception as e:
-            print(f"{e}")
+            print(f"Error starting client: {e}")
+
+    print("All clients and bot are up ✅")
     await idle()
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(start_bot())
+    await app.stop()
+    for cli in clients:
+        await cli.stop()
+    await aiosession.close()
+    print("Shutdown complete ✅")
+
+if __name__ == "__main__":
+    asyncio.run(start_bot())
